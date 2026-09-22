@@ -8,7 +8,7 @@ class ReservationCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String status;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const ReservationCard({
     super.key,
@@ -17,7 +17,7 @@ class ReservationCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.status,
-    required this.onTap,
+    this.onTap,
   });
 
   @override

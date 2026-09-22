@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart' hide Table;
 
-import '../../main.dart';
 import '../../model/reservation.dart';
 import '../../service/restaurant_service.dart';
 import '../widgets/info_field.dart';
@@ -11,9 +10,6 @@ class ReservationSucessScreen extends StatelessWidget {
   final RestaurantService service;
   final Reservation reservation;
   final String restaurantName;
-  final String? customerName;
-  final String? customerPhone;
-  final int? tableSeats;
   final String tableLocation;
 
   const ReservationSucessScreen({
@@ -21,9 +17,6 @@ class ReservationSucessScreen extends StatelessWidget {
     required this.service,
     required this.reservation,
     this.restaurantName = 'The Bistro Gourmet',
-    this.customerName,
-    this.customerPhone,
-    this.tableSeats,
     this.tableLocation = 'Indoor',
   });
 
@@ -162,7 +155,7 @@ class ReservationSucessScreen extends StatelessWidget {
             size: 18,
             color: Color(0xFF1E232A),
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.maybePop(context),
         ),
         title: const Text(
           'Confirmation',
@@ -326,22 +319,7 @@ class ReservationSucessScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          PrimaryButton(
-            text: 'Done',
-            onPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => RestaurantCustomerApp(
-                    service: service,
-                    initialTabIndex: 1,
-                    customerId: reservation.customerId,
-                  ),
-                ),
-                (route) => false,
-              );
-            },
-          ),
+          const PrimaryButton(text: 'Done'),
           const SizedBox(height: 20),
         ],
       ),

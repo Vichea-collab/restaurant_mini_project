@@ -3,7 +3,6 @@ import 'package:flutter/material.dart' hide Table;
 import '../../service/restaurant_service.dart';
 import '../widgets/filter_pill.dart';
 import '../widgets/restaurant_card.dart';
-import 'booking_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final RestaurantService service;
@@ -79,21 +78,7 @@ class HomeScreen extends StatelessWidget {
           for (final restaurant in service.restaurants)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: RestaurantCard(
-                restaurant: restaurant,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => BookingScreen(
-                        service: service,
-                        restaurant: restaurant,
-                        customerId: customerId,
-                      ),
-                    ),
-                  );
-                },
-              ),
+              child: RestaurantCard(restaurant: restaurant),
             ),
         ],
       ),

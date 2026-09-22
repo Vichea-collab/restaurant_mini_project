@@ -333,6 +333,21 @@ class RestaurantService {
     return true;
   }
 
+  String getRestaurantName(String restaurantId) =>
+      _findRestaurantOrNull(restaurantId)?.name ?? 'The Bistro Gourmet';
+
+  String getTableLocationName(String restaurantId, int tableId) {
+    final r = _findRestaurantOrNull(restaurantId);
+    if (r != null) {
+      final t = _findTableInRestaurantOrNull(r, tableId);
+      if (t != null) {
+        final name = t.location.name;
+        return '${name[0].toUpperCase()}${name.substring(1)}';
+      }
+    }
+    return 'Indoor';
+  }
+
   Restaurant _resolveRestaurant(String? restaurantId) {
     if (restaurantId != null) {
       return _findRestaurant(restaurantId);

@@ -4,13 +4,9 @@ import '../../model/restaurant.dart';
 
 class RestaurantCard extends StatelessWidget {
   final Restaurant restaurant;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
-  const RestaurantCard({
-    super.key,
-    required this.restaurant,
-    required this.onTap,
-  });
+  const RestaurantCard({super.key, required this.restaurant, this.onTap});
 
   @override
   Widget build(BuildContext context) {

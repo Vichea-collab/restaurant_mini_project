@@ -4,7 +4,9 @@ import 'model/reservation.dart';
 import 'model/table.dart';
 import 'model/time_slot.dart';
 import 'service/restaurant_service.dart';
+import 'ui/screens/booking_screen.dart';
 import 'ui/screens/home_screen.dart';
+import 'ui/screens/reservation_sucess_screen.dart';
 import 'ui/screens/reservations_screen.dart';
 
 void main() {
@@ -259,16 +261,40 @@ class AppNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const primaryTeal = Color(0xFF166359);
+    final customer = service.customers.firstWhere(
+      (c) => c.id == customerId,
+      orElse: () => service.customers.first,
+    );
+    final reservation = service.reservations.firstWhere(
+      (res) => res.customerId == customerId,
+      orElse: () => service.reservations.first,
+    );
 
     return DefaultTabController(
-      length: 2,
+      length: 4,
       initialIndex: initialTabIndex,
       child: Scaffold(
         body: TabBarView(
           physics: const NeverScrollableScrollPhysics(),
           children: [
-            HomeScreen(service: service),
+            HomeScreen(service: service, customerId: customerId),
+            BookingScreen(
+              service: service,
+              restaurant: service.restaurant,
+              customer: customer,
+            ),
             ReservationsScreen(service: service, customerId: customerId),
+            ReservationSucessScreen(
+              service: service,
+              reservation: reservation,
+              restaurantName: service.getRestaurantName(
+                reservation.restaurantId,
+              ),
+              tableLocation: service.getTableLocationName(
+                reservation.restaurantId,
+                reservation.tableId,
+              ),
+            ),
           ],
         ),
         bottomNavigationBar: Container(
@@ -281,13 +307,12 @@ class AppNavigationBar extends StatelessWidget {
             unselectedLabelColor: Color(0xFF9CA3AF),
             indicatorColor: primaryTeal,
             indicatorWeight: 3,
-            labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+            labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
             tabs: [
               Tab(icon: Icon(Icons.restaurant_outlined), text: 'Home'),
-              Tab(
-                icon: Icon(Icons.calendar_today_outlined),
-                text: 'Reservation',
-              ),
+              Tab(icon: Icon(Icons.add_circle_outline), text: 'Booking'),
+              Tab(icon: Icon(Icons.calendar_today_outlined), text: 'History'),
+              Tab(icon: Icon(Icons.check_circle_outline), text: 'Detail'),
             ],
           ),
         ),

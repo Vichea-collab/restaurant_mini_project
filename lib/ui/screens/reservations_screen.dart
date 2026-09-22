@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart' hide Table;
 
-import '../../model/reservation.dart';
 import '../../service/restaurant_service.dart';
 import '../widgets/filter_pill.dart';
 import '../widgets/reservation_card.dart';
-import 'reservation_sucess_screen.dart';
 
 class ReservationsScreen extends StatelessWidget {
   final RestaurantService service;
@@ -12,19 +10,28 @@ class ReservationsScreen extends StatelessWidget {
 
   const ReservationsScreen({super.key, required this.service, this.customerId});
 
-  static String _filterDisplayName(ReservationStatus status) {
-    switch (status) {
-      case ReservationStatus.pending:
+  static String _filterDisplayName(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
         return 'Pending';
-      case ReservationStatus.seated:
+      case 'seated':
         return 'Seated';
-      case ReservationStatus.completed:
+      case 'completed':
         return 'Completed';
-      case ReservationStatus.cancelled:
+      case 'cancelled':
         return 'Cancelled';
-      case ReservationStatus.noShow:
+      case 'noshow':
+      case 'no-show':
         return 'No-show';
+      default:
+        return status;
     }
+  }
+
+  static String _formatTime(DateTime dt) {
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m';
   }
 
   @override
@@ -60,11 +67,11 @@ class ReservationsScreen extends StatelessWidget {
                   isSelected: true,
                 ),
                 for (final status in const [
-                  ReservationStatus.pending,
-                  ReservationStatus.seated,
-                  ReservationStatus.completed,
-                  ReservationStatus.cancelled,
-                  ReservationStatus.noShow,
+                  'pending',
+                  'seated',
+                  'completed',
+                  'cancelled',
+                  'no-show',
                 ]) ...[
                   const SizedBox(width: 8),
                   FilterPill(
@@ -76,67 +83,18 @@ class ReservationsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          for (final reservation in reservations) ...[
-            Builder(
-              builder: (context) {
-                final start = reservation.slot.start;
-                final end = reservation.slot.end;
-                final startTime =
-                    '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
-                final endTime =
-                    '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
-
-                final r = service.restaurants.firstWhere(
-                  (r) => r.id == reservation.restaurantId,
-                  orElse: () => service.restaurants.first,
-                );
-                final restaurantName = r.name;
-
-                final c = service.customers.firstWhere(
-                  (c) => c.id == reservation.customerId,
-                  orElse: () => service.customers.first,
-                );
-                final customerName = c.name;
-                final customerPhone = c.phone;
-
-                final t = r.tables.firstWhere(
-                  (t) => t.id == reservation.tableId,
-                  orElse: () => r.tables.first,
-                );
-                final locationName =
-                    '${t.location.name[0].toUpperCase()}${t.location.name.substring(1)}';
-                final seats = t.seats;
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: ReservationCard(
-                    startTime: startTime,
-                    endTime: endTime,
-                    title: restaurantName,
-                    subtitle:
-                        '${reservation.guest} guests · Table ${reservation.tableId} · $locationName',
-                    status: reservation.status.name,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ReservationSucessScreen(
-                            service: service,
-                            reservation: reservation,
-                            restaurantName: restaurantName,
-                            customerName: customerName,
-                            customerPhone: customerPhone,
-                            tableSeats: seats,
-                            tableLocation: locationName,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
+          for (final reservation in reservations)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: ReservationCard(
+                startTime: _formatTime(reservation.slot.start),
+                endTime: _formatTime(reservation.slot.end),
+                title: service.getRestaurantName(reservation.restaurantId),
+                subtitle:
+                    '${reservation.guest} guests · Table ${reservation.tableId} · ${service.getTableLocationName(reservation.restaurantId, reservation.tableId)}',
+                status: reservation.status.name,
+              ),
             ),
-          ],
         ],
       ),
     );

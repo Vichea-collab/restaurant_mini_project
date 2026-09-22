@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Table;
 
+import '../../model/customer.dart';
 import '../../model/reservation.dart';
 import '../../model/restaurant.dart';
 import '../../model/table.dart';
@@ -7,41 +8,26 @@ import '../../model/time_slot.dart';
 import '../../service/restaurant_service.dart';
 import '../widgets/info_field.dart';
 import '../widgets/primary_button.dart';
-import 'reservation_sucess_screen.dart';
 
 class BookingScreen extends StatelessWidget {
   final RestaurantService service;
-  final Restaurant? restaurant;
-  final String customerId;
+  final Restaurant restaurant;
+  final Customer customer;
   final TableLocation selectedLocation;
 
   const BookingScreen({
     super.key,
     required this.service,
-    this.restaurant,
-    this.customerId = 'C103',
+    required this.restaurant,
+    required this.customer,
     this.selectedLocation = TableLocation.bar,
   });
 
-  Restaurant get _targetRestaurant =>
-      restaurant ??
-      (service.restaurants.isNotEmpty
-          ? service.restaurants.first
-          : service.restaurant);
-
   @override
   Widget build(BuildContext context) {
-    final r = _targetRestaurant;
-    final customer = service.customers.firstWhere(
-      (c) => c.id == customerId,
-      orElse: () => service.customers.first,
-    );
-    final customerName = customer.name;
-    final customerPhone = customer.phone;
-
-    final selectedTable = r.tables.firstWhere(
+    final selectedTable = restaurant.tables.firstWhere(
       (t) => t.location == selectedLocation,
-      orElse: () => r.tables.first,
+      orElse: () => restaurant.tables.first,
     );
 
     return Scaffold(
@@ -55,7 +41,7 @@ class BookingScreen extends StatelessWidget {
             size: 18,
             color: Color(0xFF1E232A),
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.maybePop(context),
         ),
         title: const Text(
           'New reservation',
@@ -76,7 +62,7 @@ class BookingScreen extends StatelessWidget {
                 child: InfoField(
                   label: 'Customer name',
                   icon: Icons.person_outline,
-                  value: customerName,
+                  value: customer.name,
                 ),
               ),
               const SizedBox(width: 12),
@@ -84,7 +70,7 @@ class BookingScreen extends StatelessWidget {
                 child: InfoField(
                   label: 'Phone number',
                   icon: Icons.phone_outlined,
-                  value: customerPhone,
+                  value: customer.phone,
                 ),
               ),
             ],
@@ -206,29 +192,9 @@ class BookingScreen extends StatelessWidget {
                 TableLocation.privateRoom,
               ])
                 _LocationOptionPill(
-                  location: loc,
                   label: _locationDisplayName(loc),
                   icon: _locationIcon(loc),
                   isSelected: loc == selectedLocation,
-                  onTap: () {
-                    if (loc != selectedLocation) {
-                      Navigator.pushReplacement(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder:
-                              (context, animation, secondaryAnimation) =>
-                                  BookingScreen(
-                                    service: service,
-                                    restaurant: r,
-                                    customerId: customerId,
-                                    selectedLocation: loc,
-                                  ),
-                          transitionDuration: Duration.zero,
-                          reverseTransitionDuration: Duration.zero,
-                        ),
-                      );
-                    }
-                  },
                 ),
             ],
           ),
@@ -241,8 +207,8 @@ class BookingScreen extends StatelessWidget {
               final newId = 'RES-0${service.reservations.length + 1}';
               final confirmedReservation = Reservation(
                 id: newId,
-                restaurantId: r.id,
-                customerId: customerId,
+                restaurantId: restaurant.id,
+                customerId: customer.id,
                 tableId: selectedTable.id,
                 slot: TimeSlot(
                   start: DateTime(2026, 9, 20, 19, 0),
@@ -256,21 +222,6 @@ class BookingScreen extends StatelessWidget {
               );
 
               service.reservations.add(confirmedReservation);
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ReservationSucessScreen(
-                    service: service,
-                    reservation: confirmedReservation,
-                    restaurantName: r.name,
-                    customerName: customerName,
-                    customerPhone: customerPhone,
-                    tableSeats: selectedTable.seats,
-                    tableLocation: _locationDisplayName(selectedLocation),
-                  ),
-                ),
-              );
             },
           ),
           const SizedBox(height: 20),
@@ -311,71 +262,54 @@ class BookingScreen extends StatelessWidget {
 }
 
 class _LocationOptionPill extends StatelessWidget {
-  final TableLocation location;
   final String label;
   final IconData icon;
   final bool isSelected;
-  final VoidCallback onTap;
 
   const _LocationOptionPill({
-    required this.location,
     required this.label,
     required this.icon,
     required this.isSelected,
-    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFFF2F9F7) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFF2F9F7) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
+        border: Border.all(
+          color: isSelected ? const Color(0xFF166359) : const Color(0xFFE5E7EB),
+          width: isSelected ? 1.5 : 1.0,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 18,
+            color: isSelected
+                ? const Color(0xFF166359)
+                : const Color(0xFF6B7280),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               color: isSelected
                   ? const Color(0xFF166359)
-                  : const Color(0xFFE5E7EB),
-              width: isSelected ? 1.5 : 1.0,
+                  : const Color(0xFF1E232A),
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: isSelected
-                    ? const Color(0xFF166359)
-                    : const Color(0xFF6B7280),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected
-                      ? const Color(0xFF166359)
-                      : const Color(0xFF1E232A),
-                ),
-              ),
-              if (isSelected) ...[
-                const SizedBox(width: 6),
-                const Icon(
-                  Icons.check_circle,
-                  size: 16,
-                  color: Color(0xFF166359),
-                ),
-              ],
-            ],
-          ),
-        ),
+          if (isSelected) ...[
+            const SizedBox(width: 6),
+            const Icon(Icons.check_circle, size: 16, color: Color(0xFF166359)),
+          ],
+        ],
       ),
     );
   }
