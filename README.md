@@ -1,4 +1,4 @@
-# w3
+# mini project
 
 A new Flutter project.
 
