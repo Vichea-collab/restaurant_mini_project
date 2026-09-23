@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart' hide Table;
 
-import '../../service/restaurant_service.dart';
+import '../../model/restaurant.dart';
 import '../widgets/filter_pill.dart';
 import '../widgets/restaurant_card.dart';
 
 class HomeScreen extends StatelessWidget {
-  final RestaurantService service;
-  final String customerId;
+  final List<Restaurant> restaurants;
 
-  const HomeScreen({
-    super.key,
-    required this.service,
-    this.customerId = 'C103',
-  });
+  const HomeScreen({super.key, required this.restaurants});
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +57,7 @@ class HomeScreen extends StatelessWidget {
             child: Row(
               children: [
                 FilterPill(
-                  text: 'All · ${service.restaurants.length}',
+                  text: 'All · ${restaurants.length}',
                   isSelected: true,
                 ),
                 const SizedBox(width: 8),
@@ -75,7 +70,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          for (final restaurant in service.restaurants)
+          for (final restaurant in restaurants)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: RestaurantCard(restaurant: restaurant),

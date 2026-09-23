@@ -348,6 +348,18 @@ class RestaurantService {
     return 'Indoor';
   }
 
+  Customer getCustomer(String customerId) =>
+      _findCustomerOrNull(customerId) ?? customers.first;
+
+  Reservation getReservationForCustomer(String customerId) {
+    for (final r in reservations) {
+      if (r.customerId == customerId) {
+        return r;
+      }
+    }
+    return reservations.first;
+  }
+
   Restaurant _resolveRestaurant(String? restaurantId) {
     if (restaurantId != null) {
       return _findRestaurant(restaurantId);

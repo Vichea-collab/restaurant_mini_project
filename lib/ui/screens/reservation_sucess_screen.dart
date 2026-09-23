@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart' hide Table;
 
 import '../../model/reservation.dart';
-import '../../service/restaurant_service.dart';
 import '../widgets/info_field.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/status_badge.dart';
 
 class ReservationSucessScreen extends StatelessWidget {
-  final RestaurantService service;
   final Reservation reservation;
   final String restaurantName;
   final String tableLocation;
 
   const ReservationSucessScreen({
     super.key,
-    required this.service,
     required this.reservation,
     this.restaurantName = 'The Bistro Gourmet',
     this.tableLocation = 'Indoor',
@@ -36,16 +33,16 @@ class ReservationSucessScreen extends StatelessWidget {
     'Dec',
   ];
 
-  String _formatDate(DateTime dt) =>
+  static String _formatDate(DateTime dt) =>
       '${_days[dt.weekday - 1]} ${dt.day} ${_months[dt.month - 1]}';
 
-  String _formatTime(DateTime dt) {
+  static String _formatTime(DateTime dt) {
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
     return '$h:$m';
   }
 
-  String _formatBookedDate(DateTime dt) =>
+  static String _formatBookedDate(DateTime dt) =>
       '${dt.day} ${_months[dt.month - 1]}, ${_formatTime(dt)}';
 
   String get _statusBadgeText {
@@ -326,6 +323,3 @@ class ReservationSucessScreen extends StatelessWidget {
     );
   }
 }
-
-typedef ReservationSuccessScreen = ReservationSucessScreen;
-typedef ReservationDetailScreen = ReservationSucessScreen;

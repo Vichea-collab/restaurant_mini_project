@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart' hide Table;
 
 import '../../model/customer.dart';
-import '../../model/reservation.dart';
 import '../../model/restaurant.dart';
 import '../../model/table.dart';
-import '../../model/time_slot.dart';
-import '../../service/restaurant_service.dart';
 import '../widgets/info_field.dart';
 import '../widgets/primary_button.dart';
 
 class BookingScreen extends StatelessWidget {
-  final RestaurantService service;
   final Restaurant restaurant;
   final Customer customer;
   final TableLocation selectedLocation;
 
   const BookingScreen({
     super.key,
-    required this.service,
     required this.restaurant,
     required this.customer,
     this.selectedLocation = TableLocation.bar,
@@ -25,11 +20,6 @@ class BookingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedTable = restaurant.tables.firstWhere(
-      (t) => t.location == selectedLocation,
-      orElse: () => restaurant.tables.first,
-    );
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -43,13 +33,26 @@ class BookingScreen extends StatelessWidget {
           ),
           onPressed: () => Navigator.maybePop(context),
         ),
-        title: const Text(
-          'New reservation',
-          style: TextStyle(
-            color: Color(0xFF1E232A),
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'New reservation',
+              style: TextStyle(
+                color: Color(0xFF1E232A),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              restaurant.name,
+              style: const TextStyle(
+                color: Color(0xFF6B7280),
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ],
         ),
         centerTitle: false,
       ),
@@ -203,26 +206,6 @@ class BookingScreen extends StatelessWidget {
 
           PrimaryButton(
             text: 'Reserve Table · ${_locationDisplayName(selectedLocation)}',
-            onPressed: () {
-              final newId = 'RES-0${service.reservations.length + 1}';
-              final confirmedReservation = Reservation(
-                id: newId,
-                restaurantId: restaurant.id,
-                customerId: customer.id,
-                tableId: selectedTable.id,
-                slot: TimeSlot(
-                  start: DateTime(2026, 9, 20, 19, 0),
-                  end: DateTime(2026, 9, 20, 21, 0),
-                ),
-                guest: 3,
-                specialRequest: 'Birthday cake at dessert',
-                status: ReservationStatus.pending,
-                createdAt: DateTime(2026, 9, 20, 18, 40),
-                holdUntil: DateTime(2026, 9, 20, 19, 20),
-              );
-
-              service.reservations.add(confirmedReservation);
-            },
           ),
           const SizedBox(height: 20),
         ],

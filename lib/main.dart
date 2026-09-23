@@ -244,8 +244,6 @@ class RestaurantApp extends StatelessWidget {
   }
 }
 
-typedef RestaurantCustomerApp = RestaurantApp;
-
 class AppNavigationBar extends StatelessWidget {
   final RestaurantService service;
   final int initialTabIndex;
@@ -261,14 +259,8 @@ class AppNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const primaryTeal = Color(0xFF166359);
-    final customer = service.customers.firstWhere(
-      (c) => c.id == customerId,
-      orElse: () => service.customers.first,
-    );
-    final reservation = service.reservations.firstWhere(
-      (res) => res.customerId == customerId,
-      orElse: () => service.reservations.first,
-    );
+    final customer = service.getCustomer(customerId);
+    final reservation = service.getReservationForCustomer(customerId);
 
     return DefaultTabController(
       length: 4,
@@ -277,15 +269,16 @@ class AppNavigationBar extends StatelessWidget {
         body: TabBarView(
           physics: const NeverScrollableScrollPhysics(),
           children: [
-            HomeScreen(service: service, customerId: customerId),
-            BookingScreen(
-              service: service,
-              restaurant: service.restaurant,
-              customer: customer,
+            HomeScreen(restaurants: service.restaurants),
+            BookingScreen(restaurant: service.restaurant, customer: customer),
+            ReservationsScreen(
+              reservations: service.getReservationsForCustomer(
+                customerId: customerId,
+              ),
+              getRestaurantName: service.getRestaurantName,
+              getTableLocationName: service.getTableLocationName,
             ),
-            ReservationsScreen(service: service, customerId: customerId),
             ReservationSucessScreen(
-              service: service,
               reservation: reservation,
               restaurantName: service.getRestaurantName(
                 reservation.restaurantId,
@@ -312,7 +305,7 @@ class AppNavigationBar extends StatelessWidget {
               Tab(icon: Icon(Icons.restaurant_outlined), text: 'Home'),
               Tab(icon: Icon(Icons.add_circle_outline), text: 'Booking'),
               Tab(icon: Icon(Icons.calendar_today_outlined), text: 'History'),
-              Tab(icon: Icon(Icons.check_circle_outline), text: 'Detail'),
+              Tab(icon: Icon(Icons.check_circle_outline), text: 'Success'),
             ],
           ),
         ),
@@ -320,6 +313,3 @@ class AppNavigationBar extends StatelessWidget {
     );
   }
 }
-
-typedef MainNavigationBar = AppNavigationBar;
-typedef CustomerNavigationBar = AppNavigationBar;

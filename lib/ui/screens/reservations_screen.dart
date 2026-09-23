@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart' hide Table;
 
-import '../../service/restaurant_service.dart';
+import '../../model/reservation.dart';
 import '../widgets/filter_pill.dart';
 import '../widgets/reservation_card.dart';
 
 class ReservationsScreen extends StatelessWidget {
-  final RestaurantService service;
-  final String? customerId;
+  final List<Reservation> reservations;
+  final String Function(String restaurantId)? getRestaurantName;
+  final String Function(String restaurantId, int tableId)? getTableLocationName;
 
-  const ReservationsScreen({super.key, required this.service, this.customerId});
+  const ReservationsScreen({
+    super.key,
+    required this.reservations,
+    this.getRestaurantName,
+    this.getTableLocationName,
+  });
 
   static String _filterDisplayName(String status) {
     switch (status.toLowerCase()) {
@@ -36,10 +42,6 @@ class ReservationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reservations = (customerId != null && customerId!.isNotEmpty)
-        ? service.getReservationsForCustomer(customerId: customerId!)
-        : service.reservations;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8F8),
       appBar: AppBar(
@@ -89,9 +91,11 @@ class ReservationsScreen extends StatelessWidget {
               child: ReservationCard(
                 startTime: _formatTime(reservation.slot.start),
                 endTime: _formatTime(reservation.slot.end),
-                title: service.getRestaurantName(reservation.restaurantId),
+                title:
+                    getRestaurantName?.call(reservation.restaurantId) ??
+                    'The Bistro Gourmet',
                 subtitle:
-                    '${reservation.guest} guests · Table ${reservation.tableId} · ${service.getTableLocationName(reservation.restaurantId, reservation.tableId)}',
+                    '${reservation.guest} guests · Table ${reservation.tableId} · ${getTableLocationName?.call(reservation.restaurantId, reservation.tableId) ?? 'Indoor'}',
                 status: reservation.status.name,
               ),
             ),
