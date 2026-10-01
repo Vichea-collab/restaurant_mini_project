@@ -43,6 +43,7 @@ class RestaurantService {
     required String name,
     required int openingHour,
     required int closingHour,
+    String type = 'Other',
     int maxLateMinutes = 20,
   }) {
     if (_findRestaurantOrNull(restaurantId) != null) {
@@ -52,6 +53,7 @@ class RestaurantService {
       Restaurant(
         id: restaurantId,
         name: name,
+        type: type,
         openingHour: openingHour,
         closingHour: closingHour,
         maxLateMinutes: maxLateMinutes,
@@ -110,24 +112,18 @@ class RestaurantService {
 
     Restaurant r = _resolveRestaurant(restaurantId);
 
-    Customer? customer = _findCustomerOrNull(customerId);
-    if (customer == null) {
-      throw Exception('Customer $customerId not found');
-    }
+    _findCustomer(customerId);
 
-    Table? table = _findTableInRestaurantOrNull(r, tableId);
-    if (table == null) {
-      throw Exception('Table $tableId not found in restaurant ${r.id}');
-    }
+    Table table = _findTableInRestaurant(r, tableId);
 
     if (table.status == TableStatus.outOfService) {
       throw Exception('Table $tableId is out of service');
     }
 
-    if (guest <= 0) {
+    if (guest < Reservation.minGuests) {
       throw Exception('Guest count must be greater than zero');
     }
-    if (guest > table.seats) {
+    if (!table.canSeat(guest)) {
       throw Exception(
         'Table $tableId (${table.seats} seats) cannot seat $guest',
       );
@@ -160,6 +156,20 @@ class RestaurantService {
         holdUntil: start.add(Duration(minutes: r.maxLateMinutes)),
       ),
     );
+  }
+
+  bool hasTableForLocation({
+    String? restaurantId,
+    required TableLocation location,
+    required int guest,
+  }) {
+    Restaurant r = _resolveRestaurant(restaurantId);
+    for (Table t in r.tables) {
+      if (t.location == location && t.canSeat(guest)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   void seatReservation({required String reservationId}) {
@@ -250,7 +260,7 @@ class RestaurantService {
     List<Table> result = [];
     for (Table t in r.tables) {
       bool inService = t.status != TableStatus.outOfService;
-      bool fits = guest > 0 && guest <= t.seats;
+      bool fits = guest >= Reservation.minGuests && t.canSeat(guest);
       if (inService && fits && _isTableFree(r.id, t.id, slot)) {
         result.add(t);
       }
@@ -275,8 +285,40 @@ class RestaurantService {
     return result;
   }
 
-  List<Reservation> getReservationsForCustomer({required String customerId}) {
-    return reservations.where((r) => r.customerId == customerId).toList();
+  List<String> getTypes() {
+    List<String> result = [];
+    for (Restaurant r in restaurants) {
+      if (!result.contains(r.type)) {
+        result.add(r.type);
+      }
+    }
+    return result;
+  }
+
+  List<Restaurant> getRestaurantsForType(String? type) {
+    List<Restaurant> result = [];
+    for (Restaurant r in restaurants) {
+      if (type == null || r.type == type) {
+        result.add(r);
+      }
+    }
+    return result;
+  }
+
+  List<Reservation> getReservationsForCustomer({
+    required String customerId,
+    ReservationStatus? status,
+  }) {
+    List<Reservation> result = [];
+    for (Reservation r in reservations) {
+      if (r.customerId != customerId) {
+        continue;
+      }
+      if (status == null || r.status == status) {
+        result.add(r);
+      }
+    }
+    return result;
   }
 
   List<Reservation> getReservationsForRestaurant({
@@ -286,10 +328,7 @@ class RestaurantService {
   }
 
   void removeCustomer({required String customerId}) {
-    Customer? customer = _findCustomerOrNull(customerId);
-    if (customer == null) {
-      throw Exception('Customer $customerId not found');
-    }
+    _findCustomer(customerId);
 
     customers.removeWhere((c) => c.id == customerId);
     reservations.removeWhere((r) => r.customerId == customerId);
@@ -333,31 +372,19 @@ class RestaurantService {
     return true;
   }
 
-  String getRestaurantName(String restaurantId) =>
-      _findRestaurantOrNull(restaurantId)?.name ?? 'The Bistro Gourmet';
-
-  String getTableLocationName(String restaurantId, int tableId) {
-    final r = _findRestaurantOrNull(restaurantId);
-    if (r != null) {
-      final t = _findTableInRestaurantOrNull(r, tableId);
-      if (t != null) {
-        final name = t.location.name;
-        return '${name[0].toUpperCase()}${name.substring(1)}';
-      }
-    }
-    return 'Indoor';
+  String getRestaurantName(String restaurantId) {
+    return _findRestaurant(restaurantId).name;
   }
 
-  Customer getCustomer(String customerId) =>
-      _findCustomerOrNull(customerId) ?? customers.first;
+  String getTableLocationName(String restaurantId, int tableId) {
+    Restaurant r = _findRestaurant(restaurantId);
+    Table t = _findTableInRestaurant(r, tableId);
+    String name = t.location.name;
+    return '${name[0].toUpperCase()}${name.substring(1)}';
+  }
 
-  Reservation getReservationForCustomer(String customerId) {
-    for (final r in reservations) {
-      if (r.customerId == customerId) {
-        return r;
-      }
-    }
-    return reservations.first;
+  Customer getCustomer(String customerId) {
+    return _findCustomer(customerId);
   }
 
   Restaurant _resolveRestaurant(String? restaurantId) {
@@ -399,6 +426,14 @@ class RestaurantService {
       }
     }
     return null;
+  }
+
+  Customer _findCustomer(String customerId) {
+    Customer? customer = _findCustomerOrNull(customerId);
+    if (customer == null) {
+      throw Exception('Customer $customerId not found');
+    }
+    return customer;
   }
 
   Customer? _findCustomerOrNull(String customerId) {

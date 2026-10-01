@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'theme.dart';
+
 class InfoField extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -23,7 +25,7 @@ class InfoField extends StatelessWidget {
           label,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF4B5563),
+            color: AppColors.textMedium,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -33,21 +35,18 @@ class InfoField extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             children: [
-              Icon(icon, size: 18, color: const Color(0xFF9CA3AF)),
+              Icon(icon, size: 18, color: AppColors.hint),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF1E232A),
-                  ),
+                  style: const TextStyle(fontSize: 14, color: AppColors.text),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

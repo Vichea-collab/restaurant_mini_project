@@ -534,4 +534,130 @@ void main() {
       );
     },
   );
+
+  test('filters a customer\'s reservations by status', () {
+    final service = newService();
+    service.makeReservation(
+      reservationId: 'RES-1',
+      customerId: 'C1',
+      tableId: 1,
+      start: dinner,
+      guest: 2,
+    );
+    service.makeReservation(
+      reservationId: 'RES-2',
+      customerId: 'C1',
+      tableId: 2,
+      start: dinner,
+      guest: 2,
+    );
+    service.cancelReservation(reservationId: 'RES-2');
+
+    expect(service.getReservationsForCustomer(customerId: 'C1').length, 2);
+    expect(
+      service
+          .getReservationsForCustomer(
+            customerId: 'C1',
+            status: ReservationStatus.cancelled,
+          )
+          .map((r) => r.id),
+      ['RES-2'],
+    );
+    expect(
+      service
+          .getReservationsForCustomer(
+            customerId: 'C1',
+            status: ReservationStatus.seated,
+          )
+          .isEmpty,
+      isTrue,
+    );
+  });
+
+  test('looking up an unknown id throws instead of guessing', () {
+    final service = newService();
+
+    expect(() => service.getCustomer('C-NONE'), throwsException);
+    expect(() => service.getRestaurantName('RST-NONE'), throwsException);
+    expect(() => service.getTableLocationName('RST1', 99), throwsException);
+  });
+
+  test('gets a customer, a restaurant name and a table location name', () {
+    final service = newService();
+
+    expect(service.getCustomer('C1').name, 'Alice');
+    expect(service.getRestaurantName('RST1'), 'Bistro');
+    expect(service.getTableLocationName('RST1', 2), 'Window');
+  });
+
+  test('filters restaurants by type', () {
+    final service = newService();
+    service.addRestaurant(
+      restaurantId: 'RST2',
+      name: 'Zen',
+      type: 'Japanese',
+      openingHour: 12,
+      closingHour: 23,
+    );
+    service.addRestaurant(
+      restaurantId: 'RST3',
+      name: 'Sakura',
+      type: 'Japanese',
+      openingHour: 12,
+      closingHour: 23,
+    );
+
+    expect(service.getTypes(), ['Other', 'Japanese']);
+    expect(service.getRestaurantsForType(null).length, 3);
+    expect(service.getRestaurantsForType('Japanese').map((r) => r.name), [
+      'Zen',
+      'Sakura',
+    ]);
+    expect(service.getRestaurantsForType('Italian').isEmpty, isTrue);
+  });
+
+  test('checks that a location has a table big enough', () {
+    final service = newService();
+
+    expect(
+      service.hasTableForLocation(location: TableLocation.indoor, guest: 4),
+      isTrue,
+    );
+    expect(
+      service.hasTableForLocation(location: TableLocation.window, guest: 2),
+      isTrue,
+    );
+    expect(
+      service.hasTableForLocation(location: TableLocation.window, guest: 3),
+      isFalse,
+    );
+    expect(
+      service.hasTableForLocation(location: TableLocation.bar, guest: 1),
+      isFalse,
+    );
+  });
+
+  test('only bar, window and outdoor have a guest limit', () {
+    final service = newService();
+
+    // indoor table has 4 seats but takes any number of guests
+    service.makeReservation(
+      reservationId: 'R1',
+      customerId: 'C1',
+      tableId: 1,
+      start: dinner,
+      guest: 12,
+    );
+    expect(service.reservations.first.guest, 12);
+
+    // window table has 2 seats and a limit
+    expect(
+      service.hasTableForLocation(location: TableLocation.window, guest: 3),
+      isFalse,
+    );
+    expect(
+      service.hasTableForLocation(location: TableLocation.indoor, guest: 50),
+      isTrue,
+    );
+  });
 }

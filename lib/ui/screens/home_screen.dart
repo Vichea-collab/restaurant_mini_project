@@ -1,79 +1,79 @@
-import 'package:flutter/material.dart' hide Table;
+import 'package:flutter/material.dart';
 
-import '../../model/restaurant.dart';
-import '../widgets/filter_pill.dart';
-import '../widgets/restaurant_card.dart';
+import '../../service/restaurant_service.dart';
+import '../widgets/theme.dart';
+import '../widgets/app_card.dart';
+import '../widgets/filter_bar.dart';
 
-class HomeScreen extends StatelessWidget {
-  final List<Restaurant> restaurants;
+class HomeScreen extends StatefulWidget {
+  final RestaurantService service;
 
-  const HomeScreen({super.key, required this.restaurants});
+  const HomeScreen({super.key, required this.service});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String selectedFilter = 'All';
+
+  List<String> get filterOptions {
+    List<String> options = ['All'];
+    options.addAll(widget.service.getTypes());
+    return options;
+  }
+
+  void onFilterChanged(String option) {
+    setState(() {
+      selectedFilter = option;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    String? type;
+    if (selectedFilter != 'All') {
+      type = selectedFilter;
+    }
+    final restaurants = widget.service.getRestaurantsForType(type);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8F8),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        titleSpacing: 20,
         title: const Text(
           'Restaurants',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1E232A),
+            color: AppColors.text,
           ),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         children: [
-          Container(
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-            ),
-            child: const TextField(
-              decoration: InputDecoration(
-                hintText: 'Search restaurants...',
-                hintStyle: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: Color(0xFF9CA3AF),
-                  size: 20,
-                ),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 14),
-              ),
-              style: TextStyle(fontSize: 14, color: Color(0xFF1E232A)),
-            ),
-          ),
-          const SizedBox(height: 14),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                FilterPill(
-                  text: 'All · ${restaurants.length}',
-                  isSelected: true,
-                ),
-                const SizedBox(width: 8),
-                const FilterPill(text: 'Fine Dining', isSelected: false),
-                const SizedBox(width: 8),
-                const FilterPill(text: 'Japanese', isSelected: false),
-                const SizedBox(width: 8),
-                const FilterPill(text: 'Italian', isSelected: false),
-              ],
-            ),
+          FilterBar(
+            options: filterOptions,
+            selectedOption: selectedFilter,
+            onSelected: onFilterChanged,
           ),
           const SizedBox(height: 16),
           for (final restaurant in restaurants)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: RestaurantCard(restaurant: restaurant),
+              child: AppCard(
+                leading: const Icon(
+                  Icons.restaurant,
+                  color: AppColors.teal,
+                  size: 28,
+                ),
+                title: restaurant.name,
+                subtitle:
+                    '${restaurant.type} · ${restaurant.openingHour}:00 - ${restaurant.closingHour}:00',
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.hint,
+                ),
+              ),
             ),
         ],
       ),

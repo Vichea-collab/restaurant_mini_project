@@ -1,8 +1,19 @@
 import 'time_slot.dart';
 
-enum ReservationStatus { pending, seated, completed, cancelled, noShow }
+enum ReservationStatus {
+  pending('Pending'),
+  seated('Seated'),
+  completed('Completed'),
+  cancelled('Cancelled'),
+  noShow('No-show');
+
+  final String label;
+  const ReservationStatus(this.label);
+}
 
 class Reservation {
+  static const int minGuests = 1;
+
   final String id;
   final String restaurantId;
   final String customerId;
@@ -12,7 +23,7 @@ class Reservation {
   final String? specialRequest;
   final DateTime createdAt;
   final DateTime holdUntil;
-  ReservationStatus status = ReservationStatus.pending;
+  ReservationStatus status;
 
   Reservation({
     required this.id,
@@ -24,6 +35,6 @@ class Reservation {
     required this.createdAt,
     required this.holdUntil,
     this.specialRequest,
-    ReservationStatus? status,
-  }) : status = status ?? ReservationStatus.pending;
+    this.status = ReservationStatus.pending,
+  });
 }

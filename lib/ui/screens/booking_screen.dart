@@ -1,60 +1,84 @@
 import 'package:flutter/material.dart' hide Table;
 
 import '../../model/customer.dart';
-import '../../model/restaurant.dart';
+import '../../model/reservation.dart';
+import '../../service/restaurant_service.dart';
 import '../../model/table.dart';
+import '../widgets/theme.dart';
+import '../widgets/guest_stepper.dart';
 import '../widgets/info_field.dart';
 import '../widgets/primary_button.dart';
 
-class BookingScreen extends StatelessWidget {
-  final Restaurant restaurant;
+class BookingScreen extends StatefulWidget {
+  final RestaurantService service;
   final Customer customer;
-  final TableLocation selectedLocation;
 
   const BookingScreen({
     super.key,
-    required this.restaurant,
+    required this.service,
     required this.customer,
-    this.selectedLocation = TableLocation.bar,
   });
+
+  @override
+  State<BookingScreen> createState() => _BookingScreenState();
+}
+
+class _BookingScreenState extends State<BookingScreen> {
+  TableLocation? selectedLocation = TableLocation.bar;
+  int guestCount = 2;
+
+  bool get canMinus => guestCount > Reservation.minGuests;
+
+  bool canUse(TableLocation location) {
+    return widget.service.hasTableForLocation(
+      location: location,
+      guest: guestCount,
+    );
+  }
+
+  void changeGuest(int newCount) {
+    setState(() {
+      guestCount = newCount;
+      if (selectedLocation != null && !canUse(selectedLocation!)) {
+        selectedLocation = null;
+      }
+    });
+  }
+
+  void onMinus() {
+    changeGuest(guestCount - 1);
+  }
+
+  void onAdd() {
+    changeGuest(guestCount + 1);
+  }
+
+  void onLocationSelected(TableLocation location) {
+    setState(() {
+      selectedLocation = location;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            size: 18,
-            color: Color(0xFF1E232A),
-          ),
-          onPressed: () => Navigator.maybePop(context),
-        ),
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'New reservation',
               style: TextStyle(
-                color: Color(0xFF1E232A),
-                fontSize: 18,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
+                color: AppColors.text,
               ),
             ),
             Text(
-              restaurant.name,
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 12,
-                fontWeight: FontWeight.normal,
-              ),
+              widget.service.restaurant.name,
+              style: const TextStyle(fontSize: 12, color: AppColors.textLight),
             ),
           ],
         ),
-        centerTitle: false,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -65,7 +89,7 @@ class BookingScreen extends StatelessWidget {
                 child: InfoField(
                   label: 'Customer name',
                   icon: Icons.person_outline,
-                  value: customer.name,
+                  value: widget.customer.name,
                 ),
               ),
               const SizedBox(width: 12),
@@ -73,37 +97,37 @@ class BookingScreen extends StatelessWidget {
                 child: InfoField(
                   label: 'Phone number',
                   icon: Icons.phone_outlined,
-                  value: customer.phone,
+                  value: widget.customer.phone,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
-          const Row(
+          Row(
             children: [
               Expanded(
                 child: InfoField(
                   label: 'Date',
                   icon: Icons.calendar_today_outlined,
                   value: 'Sat 20 Sep',
-                  trailing: Icon(
+                  trailing: const Icon(
                     Icons.keyboard_arrow_down,
                     size: 18,
-                    color: Color(0xFF9CA3AF),
+                    color: AppColors.hint,
                   ),
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(
                 child: InfoField(
                   label: 'Time',
                   icon: Icons.access_time,
                   value: '19:00 - 21:00',
-                  trailing: Icon(
+                  trailing: const Icon(
                     Icons.keyboard_arrow_down,
                     size: 18,
-                    color: Color(0xFF9CA3AF),
+                    color: AppColors.hint,
                   ),
                 ),
               ),
@@ -111,42 +135,11 @@ class BookingScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Guest',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF4B5563),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                height: 48,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF9FAFB),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Icon(Icons.remove, size: 20, color: Colors.grey),
-                    Text(
-                      '3',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Icon(Icons.add, size: 20, color: Colors.grey),
-                  ],
-                ),
-              ),
-            ],
+          GuestStepper(
+            guestCount: guestCount,
+            canMinus: canMinus,
+            onMinus: onMinus,
+            onAdd: onAdd,
           ),
           const SizedBox(height: 16),
 
@@ -154,7 +147,7 @@ class BookingScreen extends StatelessWidget {
             'Special request',
             style: TextStyle(
               fontSize: 13,
-              color: Color(0xFF4B5563),
+              color: AppColors.textMedium,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -164,11 +157,11 @@ class BookingScreen extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: AppColors.border),
             ),
             child: const Text(
               'Birthday cake at dessert',
-              style: TextStyle(fontSize: 14, color: Color(0xFF1E232A)),
+              style: TextStyle(fontSize: 14, color: AppColors.text),
             ),
           ),
           const SizedBox(height: 20),
@@ -178,7 +171,7 @@ class BookingScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1E232A),
+              color: AppColors.text,
             ),
           ),
           const SizedBox(height: 12),
@@ -196,8 +189,9 @@ class BookingScreen extends StatelessWidget {
               ])
                 _LocationOptionPill(
                   label: _locationDisplayName(loc),
-                  icon: _locationIcon(loc),
                   isSelected: loc == selectedLocation,
+                  isEnabled: canUse(loc),
+                  onSelected: () => onLocationSelected(loc),
                 ),
             ],
           ),
@@ -205,7 +199,9 @@ class BookingScreen extends StatelessWidget {
           const SizedBox(height: 28),
 
           PrimaryButton(
-            text: 'Reserve Table · ${_locationDisplayName(selectedLocation)}',
+            text: selectedLocation == null
+                ? 'Reserve Table'
+                : 'Reserve Table · ${_locationDisplayName(selectedLocation!)}',
           ),
           const SizedBox(height: 20),
         ],
@@ -227,72 +223,48 @@ class BookingScreen extends StatelessWidget {
         return 'Private Room';
     }
   }
-
-  static IconData _locationIcon(TableLocation loc) {
-    switch (loc) {
-      case TableLocation.bar:
-        return Icons.local_bar_outlined;
-      case TableLocation.window:
-        return Icons.window_outlined;
-      case TableLocation.indoor:
-        return Icons.chair_outlined;
-      case TableLocation.outdoor:
-        return Icons.deck_outlined;
-      case TableLocation.privateRoom:
-        return Icons.meeting_room_outlined;
-    }
-  }
 }
 
 class _LocationOptionPill extends StatelessWidget {
   final String label;
-  final IconData icon;
   final bool isSelected;
+  final bool isEnabled;
+  final VoidCallback onSelected;
 
   const _LocationOptionPill({
     required this.label,
-    required this.icon,
     required this.isSelected,
+    required this.isEnabled,
+    required this.onSelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFF2F9F7) : Colors.white,
+    return Opacity(
+      opacity: isEnabled ? 1 : 0.4,
+      child: InkWell(
+        onTap: isEnabled ? onSelected : null,
+        hoverColor: Colors.transparent,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected ? const Color(0xFF166359) : const Color(0xFFE5E7EB),
-          width: isSelected ? 1.5 : 1.0,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: isSelected
-                ? const Color(0xFF166359)
-                : const Color(0xFF6B7280),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.tealLight : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppColors.teal : AppColors.border,
+              width: isSelected ? 1.5 : 1.0,
+            ),
           ),
-          const SizedBox(width: 8),
-          Text(
+          child: Text(
             label,
             style: TextStyle(
               fontSize: 13.5,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: isSelected
-                  ? const Color(0xFF166359)
-                  : const Color(0xFF1E232A),
+              color: isSelected ? AppColors.teal : AppColors.text,
             ),
           ),
-          if (isSelected) ...[
-            const SizedBox(width: 6),
-            const Icon(Icons.check_circle, size: 16, color: Color(0xFF166359)),
-          ],
-        ],
+        ),
       ),
     );
   }
