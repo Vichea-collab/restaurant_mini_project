@@ -69,7 +69,6 @@ class _BookingScreenState extends State<BookingScreen> {
               'New reservation',
               style: TextStyle(
                 fontSize: 22,
-                fontWeight: FontWeight.bold,
                 color: AppColors.text,
               ),
             ),
@@ -170,7 +169,6 @@ class _BookingScreenState extends State<BookingScreen> {
             'Table location',
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.bold,
               color: AppColors.text,
             ),
           ),

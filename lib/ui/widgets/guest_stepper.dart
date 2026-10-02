@@ -52,7 +52,6 @@ class GuestStepper extends StatelessWidget {
               Text(
                 '$guestCount',
                 style: const TextStyle(
-                  fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
               ),

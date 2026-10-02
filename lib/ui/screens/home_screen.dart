@@ -43,7 +43,6 @@ class _HomeScreenState extends State<HomeScreen> {
           'Restaurants',
           style: TextStyle(
             fontSize: 22,
-            fontWeight: FontWeight.bold,
             color: AppColors.text,
           ),
         ),

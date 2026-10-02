@@ -77,7 +77,6 @@ class _ReservationScreenState extends State<ReservationScreen> {
           'Reservation',
           style: TextStyle(
             fontSize: 22,
-            fontWeight: FontWeight.bold,
             color: AppColors.text,
           ),
         ),
@@ -110,7 +109,6 @@ class _ReservationScreenState extends State<ReservationScreen> {
                     _formatTime(reservation.slot.start),
                     style: const TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.bold,
                       color: AppColors.text,
                     ),
                   ),
