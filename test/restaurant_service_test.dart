@@ -1,27 +1,33 @@
 import 'package:test/test.dart';
 import 'package:w3/model/reservation.dart';
 import 'package:w3/model/table.dart';
+import 'package:w3/service/reservation_service.dart';
 import 'package:w3/service/restaurant_service.dart';
 
-RestaurantService newService({DateTime Function()? now}) {
+(RestaurantService, ReservationService) newService({
+  DateTime Function()? now,
+}) {
   final service = RestaurantService(
     restaurantName: 'Bistro',
     openingHour: 11,
     closingHour: 22,
     maxLateMinutes: 20,
-    now: now ?? () => dinner.subtract(const Duration(hours: 1)),
   );
   service.addTable(tableId: 1, seats: 4, location: TableLocation.indoor);
   service.addTable(tableId: 2, seats: 2, location: TableLocation.window);
   service.addCustomer(customerId: 'C1', name: 'Alice', phone: '555-0100');
-  return service;
+  final reservationService = ReservationService(
+    service,
+    now: now ?? () => dinner.subtract(const Duration(hours: 1)),
+  );
+  return (service, reservationService);
 }
 
 final dinner = DateTime(2026, 9, 20, 19, 0);
 
 void main() {
   test('adds a table', () {
-    final service = newService();
+    final (service, _) = newService();
 
     expect(service.tables.length, 2);
     expect(service.tables.first.seats, 4);
@@ -29,20 +35,20 @@ void main() {
   });
 
   test('rejects a duplicate table id', () {
-    final service = newService();
+    final (service, _) = newService();
 
     expect(() => service.addTable(tableId: 1, seats: 6), throwsException);
   });
 
   test('adds a customer', () {
-    final service = newService();
+    final (service, _) = newService();
 
     expect(service.customers.length, 1);
     expect(service.customers.first.name, 'Alice');
   });
 
   test('rejects a duplicate customer id', () {
-    final service = newService();
+    final (service, _) = newService();
 
     expect(
       () => service.addCustomer(customerId: 'C1', name: 'Bob', phone: '1'),
@@ -51,9 +57,9 @@ void main() {
   });
 
   test('makes a pending reservation with the default duration', () {
-    final service = newService();
+    final (_, reservationService) = newService();
 
-    service.makeReservation(
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -61,7 +67,7 @@ void main() {
       guest: 3,
     );
 
-    final r = service.reservations.single;
+    final r = reservationService.reservations.single;
     expect(r.status, ReservationStatus.pending);
     expect(r.customerId, 'C1');
     expect(r.tableId, 1);
@@ -72,9 +78,9 @@ void main() {
   });
 
   test('stores a custom duration and special request', () {
-    final service = newService();
+    final (_, reservationService) = newService();
 
-    service.makeReservation(
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -84,14 +90,14 @@ void main() {
       specialRequest: 'Birthday cake',
     );
 
-    final r = service.reservations.single;
+    final r = reservationService.reservations.single;
     expect(r.slot.end, dinner.add(const Duration(minutes: 120)));
     expect(r.specialRequest, 'Birthday cake');
   });
 
   test('rejects a duplicate reservation id', () {
-    final service = newService();
-    service.makeReservation(
+    final (_, reservationService) = newService();
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -100,7 +106,7 @@ void main() {
     );
 
     expect(
-      () => service.makeReservation(
+      () => reservationService.makeReservation(
         reservationId: 'R1',
         customerId: 'C1',
         tableId: 2,
@@ -112,10 +118,10 @@ void main() {
   });
 
   test('rejects a reservation for an unknown customer', () {
-    final service = newService();
+    final (_, reservationService) = newService();
 
     expect(
-      () => service.makeReservation(
+      () => reservationService.makeReservation(
         reservationId: 'R1',
         customerId: 'NOBODY',
         tableId: 1,
@@ -127,10 +133,10 @@ void main() {
   });
 
   test('rejects a party larger than table seats', () {
-    final service = newService();
+    final (_, reservationService) = newService();
 
     expect(
-      () => service.makeReservation(
+      () => reservationService.makeReservation(
         reservationId: 'R1',
         customerId: 'C1',
         tableId: 2,
@@ -142,10 +148,10 @@ void main() {
   });
 
   test('rejects a reservation outside opening hours', () {
-    final service = newService();
+    final (_, reservationService) = newService();
 
     expect(
-      () => service.makeReservation(
+      () => reservationService.makeReservation(
         reservationId: 'R1',
         customerId: 'C1',
         tableId: 1,
@@ -157,8 +163,8 @@ void main() {
   });
 
   test('rejects an overlapping reservation on the same table', () {
-    final service = newService();
-    service.makeReservation(
+    final (_, reservationService) = newService();
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -167,7 +173,7 @@ void main() {
     );
 
     expect(
-      () => service.makeReservation(
+      () => reservationService.makeReservation(
         reservationId: 'R2',
         customerId: 'C1',
         tableId: 1,
@@ -179,8 +185,8 @@ void main() {
   });
 
   test('allows a reservation right after another one ends', () {
-    final service = newService();
-    service.makeReservation(
+    final (_, reservationService) = newService();
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -188,7 +194,7 @@ void main() {
       guest: 2,
     );
 
-    service.makeReservation(
+    reservationService.makeReservation(
       reservationId: 'R2',
       customerId: 'C1',
       tableId: 1,
@@ -196,21 +202,21 @@ void main() {
       guest: 2,
     );
 
-    expect(service.reservations.length, 2);
+    expect(reservationService.reservations.length, 2);
   });
 
   test('allows a reservation after a cancelled one on the same slot', () {
-    final service = newService();
-    service.makeReservation(
+    final (_, reservationService) = newService();
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
       start: dinner,
       guest: 2,
     );
-    service.cancelReservation(reservationId: 'R1');
+    reservationService.cancelReservation(reservationId: 'R1');
 
-    service.makeReservation(
+    reservationService.makeReservation(
       reservationId: 'R2',
       customerId: 'C1',
       tableId: 1,
@@ -218,16 +224,19 @@ void main() {
       guest: 2,
     );
 
-    expect(service.reservations.length, 2);
-    expect(service.reservations.first.status, ReservationStatus.cancelled);
+    expect(reservationService.reservations.length, 2);
+    expect(
+      reservationService.reservations.first.status,
+      ReservationStatus.cancelled,
+    );
   });
 
   test('rejects a reservation on a table that is out of service', () {
-    final service = newService();
+    final (service, reservationService) = newService();
     service.tables.first.status = TableStatus.outOfService;
 
     expect(
-      () => service.makeReservation(
+      () => reservationService.makeReservation(
         reservationId: 'R1',
         customerId: 'C1',
         tableId: 1,
@@ -239,8 +248,8 @@ void main() {
   });
 
   test('seating occupies the table and completing frees it', () {
-    final service = newService();
-    service.makeReservation(
+    final (service, reservationService) = newService();
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -248,32 +257,41 @@ void main() {
       guest: 2,
     );
 
-    service.seatReservation(reservationId: 'R1');
-    expect(service.reservations.single.status, ReservationStatus.seated);
+    reservationService.seatReservation(reservationId: 'R1');
+    expect(
+      reservationService.reservations.single.status,
+      ReservationStatus.seated,
+    );
     expect(service.tables.first.status, TableStatus.occupied);
 
-    service.completeReservation(reservationId: 'R1');
-    expect(service.reservations.single.status, ReservationStatus.completed);
+    reservationService.completeReservation(reservationId: 'R1');
+    expect(
+      reservationService.reservations.single.status,
+      ReservationStatus.completed,
+    );
     expect(service.tables.first.status, TableStatus.available);
   });
 
   test('cannot seat a reservation that was cancelled', () {
-    final service = newService();
-    service.makeReservation(
+    final (_, reservationService) = newService();
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
       start: dinner,
       guest: 2,
     );
-    service.cancelReservation(reservationId: 'R1');
+    reservationService.cancelReservation(reservationId: 'R1');
 
-    expect(() => service.seatReservation(reservationId: 'R1'), throwsException);
+    expect(
+      () => reservationService.seatReservation(reservationId: 'R1'),
+      throwsException,
+    );
   });
 
   test('cannot complete a reservation that has not been seated', () {
-    final service = newService();
-    service.makeReservation(
+    final (_, reservationService) = newService();
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -282,14 +300,14 @@ void main() {
     );
 
     expect(
-      () => service.completeReservation(reservationId: 'R1'),
+      () => reservationService.completeReservation(reservationId: 'R1'),
       throwsException,
     );
   });
 
   test('marks a reservation as no-show', () {
-    final service = newService();
-    service.makeReservation(
+    final (_, reservationService) = newService();
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -297,14 +315,17 @@ void main() {
       guest: 2,
     );
 
-    service.markNoShow(reservationId: 'R1');
+    reservationService.markNoShow(reservationId: 'R1');
 
-    expect(service.reservations.single.status, ReservationStatus.noShow);
+    expect(
+      reservationService.reservations.single.status,
+      ReservationStatus.noShow,
+    );
   });
 
   test('finds only tables that fit the party and are free in the slot', () {
-    final service = newService();
-    service.makeReservation(
+    final (_, reservationService) = newService();
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -312,23 +333,29 @@ void main() {
       guest: 2,
     );
 
-    final free = service.findAvailableTables(start: dinner, guest: 2);
+    final free = reservationService.findAvailableTables(
+      start: dinner,
+      guest: 2,
+    );
     expect(free.map((t) => t.id), [2]);
 
-    final freeForFour = service.findAvailableTables(start: dinner, guest: 4);
+    final freeForFour = reservationService.findAvailableTables(
+      start: dinner,
+      guest: 4,
+    );
     expect(freeForFour, isEmpty);
   });
 
   test('lists reservations for a given day', () {
-    final service = newService();
-    service.makeReservation(
+    final (_, reservationService) = newService();
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
       start: dinner,
       guest: 2,
     );
-    service.makeReservation(
+    reservationService.makeReservation(
       reservationId: 'R2',
       customerId: 'C1',
       tableId: 2,
@@ -336,21 +363,23 @@ void main() {
       guest: 2,
     );
 
-    final sept20 = service.getReservationsForDate(DateTime(2026, 9, 20));
+    final sept20 = reservationService.getReservationsForDate(
+      DateTime(2026, 9, 20),
+    );
     expect(sept20.map((r) => r.id), ['R1']);
   });
 
   test('lists reservations for a customer', () {
-    final service = newService();
+    final (service, reservationService) = newService();
     service.addCustomer(customerId: 'C2', name: 'Bob', phone: '555-0200');
-    service.makeReservation(
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
       start: dinner,
       guest: 2,
     );
-    service.makeReservation(
+    reservationService.makeReservation(
       reservationId: 'R2',
       customerId: 'C2',
       tableId: 2,
@@ -358,13 +387,15 @@ void main() {
       guest: 2,
     );
 
-    final bobs = service.getReservationsForCustomer(customerId: 'C2');
+    final bobs = reservationService.getReservationsForCustomer(
+      customerId: 'C2',
+    );
     expect(bobs.map((r) => r.id), ['R2']);
   });
 
   test('removing a customer also removes their reservations', () {
-    final service = newService();
-    service.makeReservation(
+    final (service, reservationService) = newService();
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -373,16 +404,17 @@ void main() {
     );
 
     service.removeCustomer(customerId: 'C1');
+    reservationService.removeReservationsForCustomer(customerId: 'C1');
 
     expect(service.customers, isEmpty);
-    expect(service.reservations, isEmpty);
+    expect(reservationService.reservations, isEmpty);
   });
 
   test('table is still held one minute before the late limit', () {
     var now = dinner;
-    final service = newService(now: () => now);
+    final (service, reservationService) = newService(now: () => now);
     service.addCustomer(customerId: 'C2', name: 'Bob', phone: '555-0200');
-    service.makeReservation(
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -393,7 +425,7 @@ void main() {
     now = dinner.add(const Duration(minutes: 19));
 
     expect(
-      () => service.makeReservation(
+      () => reservationService.makeReservation(
         reservationId: 'R2',
         customerId: 'C2',
         tableId: 1,
@@ -406,9 +438,9 @@ void main() {
 
   test('table becomes available once the guest is 20 minutes late', () {
     var now = dinner;
-    final service = newService(now: () => now);
+    final (service, reservationService) = newService(now: () => now);
     service.addCustomer(customerId: 'C2', name: 'Bob', phone: '555-0200');
-    service.makeReservation(
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -418,8 +450,11 @@ void main() {
 
     now = dinner.add(const Duration(minutes: 21));
 
-    expect(service.findAvailableTables(start: now, guest: 2).length, 2);
-    service.makeReservation(
+    expect(
+      reservationService.findAvailableTables(start: now, guest: 2).length,
+      2,
+    );
+    reservationService.makeReservation(
       reservationId: 'R2',
       customerId: 'C2',
       tableId: 1,
@@ -427,14 +462,20 @@ void main() {
       guest: 2,
     );
 
-    expect(service.reservations.first.status, ReservationStatus.noShow);
-    expect(service.reservations.last.status, ReservationStatus.pending);
+    expect(
+      reservationService.reservations.first.status,
+      ReservationStatus.noShow,
+    );
+    expect(
+      reservationService.reservations.last.status,
+      ReservationStatus.pending,
+    );
   });
 
   test('releaseExpiredReservations reports how many it released', () {
     var now = dinner;
-    final service = newService(now: () => now);
-    service.makeReservation(
+    final (_, reservationService) = newService(now: () => now);
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -444,32 +485,35 @@ void main() {
 
     now = dinner.add(const Duration(minutes: 30));
 
-    expect(service.releaseExpiredReservations(), 1);
-    expect(service.releaseExpiredReservations(), 0);
+    expect(reservationService.releaseExpiredReservations(), 1);
+    expect(reservationService.releaseExpiredReservations(), 0);
   });
 
   test('a seated reservation never expires', () {
     var now = dinner;
-    final service = newService(now: () => now);
-    service.makeReservation(
+    final (_, reservationService) = newService(now: () => now);
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
       start: dinner,
       guest: 2,
     );
-    service.seatReservation(reservationId: 'R1');
+    reservationService.seatReservation(reservationId: 'R1');
 
     now = dinner.add(const Duration(minutes: 60));
 
-    expect(service.releaseExpiredReservations(), 0);
-    expect(service.reservations.single.status, ReservationStatus.seated);
+    expect(reservationService.releaseExpiredReservations(), 0);
+    expect(
+      reservationService.reservations.single.status,
+      ReservationStatus.seated,
+    );
   });
 
   test('cannot seat a guest who arrives after the late limit', () {
     var now = dinner;
-    final service = newService(now: () => now);
-    service.makeReservation(
+    final (_, reservationService) = newService(now: () => now);
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
@@ -479,14 +523,20 @@ void main() {
 
     now = dinner.add(const Duration(minutes: 25));
 
-    expect(() => service.seatReservation(reservationId: 'R1'), throwsException);
-    expect(service.reservations.single.status, ReservationStatus.noShow);
+    expect(
+      () => reservationService.seatReservation(reservationId: 'R1'),
+      throwsException,
+    );
+    expect(
+      reservationService.reservations.single.status,
+      ReservationStatus.noShow,
+    );
   });
 
   test(
     'supports many-to-many relationship between customers and restaurants',
     () {
-      final service = newService();
+      final (service, reservationService) = newService();
 
       service.addRestaurant(
         restaurantId: 'RST2',
@@ -501,7 +551,7 @@ void main() {
         location: TableLocation.indoor,
       );
 
-      service.makeReservation(
+      reservationService.makeReservation(
         reservationId: 'RES-BISTRO',
         restaurantId: 'RST1',
         customerId: 'C1',
@@ -510,7 +560,7 @@ void main() {
         guest: 2,
       );
 
-      service.makeReservation(
+      reservationService.makeReservation(
         reservationId: 'RES-SUSHI',
         restaurantId: 'RST2',
         customerId: 'C1',
@@ -519,43 +569,50 @@ void main() {
         guest: 2,
       );
 
-      final c1Reservations = service.getReservationsForCustomer(
+      final c1Reservations = reservationService.getReservationsForCustomer(
         customerId: 'C1',
       );
       expect(c1Reservations.length, 2);
 
       expect(
-        service.getReservationsForRestaurant(restaurantId: 'RST1').length,
+        reservationService
+            .getReservationsForRestaurant(restaurantId: 'RST1')
+            .length,
         1,
       );
       expect(
-        service.getReservationsForRestaurant(restaurantId: 'RST2').length,
+        reservationService
+            .getReservationsForRestaurant(restaurantId: 'RST2')
+            .length,
         1,
       );
     },
   );
 
   test('filters a customer\'s reservations by status', () {
-    final service = newService();
-    service.makeReservation(
+    final (_, reservationService) = newService();
+    reservationService.makeReservation(
       reservationId: 'RES-1',
       customerId: 'C1',
       tableId: 1,
       start: dinner,
       guest: 2,
     );
-    service.makeReservation(
+    reservationService.makeReservation(
       reservationId: 'RES-2',
       customerId: 'C1',
       tableId: 2,
       start: dinner,
       guest: 2,
     );
-    service.cancelReservation(reservationId: 'RES-2');
+    reservationService.cancelReservation(reservationId: 'RES-2');
 
-    expect(service.getReservationsForCustomer(customerId: 'C1').length, 2);
     expect(
-      service
+      reservationService.getReservationsForCustomer(customerId: 'C1').length,
+      2,
+    );
+    expect(
+      reservationService
           .getReservationsForCustomer(
             customerId: 'C1',
             status: ReservationStatus.cancelled,
@@ -564,7 +621,7 @@ void main() {
       ['RES-2'],
     );
     expect(
-      service
+      reservationService
           .getReservationsForCustomer(
             customerId: 'C1',
             status: ReservationStatus.seated,
@@ -575,7 +632,7 @@ void main() {
   });
 
   test('looking up an unknown id throws instead of guessing', () {
-    final service = newService();
+    final (service, _) = newService();
 
     expect(() => service.getCustomer('C-NONE'), throwsException);
     expect(() => service.getRestaurantName('RST-NONE'), throwsException);
@@ -583,7 +640,7 @@ void main() {
   });
 
   test('gets a customer, a restaurant name and a table location name', () {
-    final service = newService();
+    final (service, _) = newService();
 
     expect(service.getCustomer('C1').name, 'Alice');
     expect(service.getRestaurantName('RST1'), 'Bistro');
@@ -591,7 +648,7 @@ void main() {
   });
 
   test('filters restaurants by type', () {
-    final service = newService();
+    final (service, _) = newService();
     service.addRestaurant(
       restaurantId: 'RST2',
       name: 'Zen',
@@ -617,7 +674,7 @@ void main() {
   });
 
   test('checks that a location has a table big enough', () {
-    final service = newService();
+    final (service, _) = newService();
 
     expect(
       service.hasTableForLocation(location: TableLocation.indoor, guest: 4),
@@ -638,17 +695,17 @@ void main() {
   });
 
   test('only bar, window and outdoor have a guest limit', () {
-    final service = newService();
+    final (service, reservationService) = newService();
 
     // indoor table has 4 seats but takes any number of guests
-    service.makeReservation(
+    reservationService.makeReservation(
       reservationId: 'R1',
       customerId: 'C1',
       tableId: 1,
       start: dinner,
       guest: 12,
     );
-    expect(service.reservations.first.guest, 12);
+    expect(reservationService.reservations.first.guest, 12);
 
     // window table has 2 seats and a limit
     expect(

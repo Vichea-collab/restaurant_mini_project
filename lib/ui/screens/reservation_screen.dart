@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../model/reservation.dart';
+import '../../service/reservation_service.dart';
 import '../../service/restaurant_service.dart';
 import '../widgets/theme.dart';
 import '../widgets/app_card.dart';
@@ -9,11 +10,13 @@ import '../widgets/status_badge.dart';
 
 class ReservationScreen extends StatefulWidget {
   final RestaurantService service;
+  final ReservationService reservationService;
   final String customerId;
 
   const ReservationScreen({
     super.key,
     required this.service,
+    required this.reservationService,
     required this.customerId,
   });
 
@@ -63,7 +66,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final reservations = widget.service.getReservationsForCustomer(
+    final reservations = widget.reservationService.getReservationsForCustomer(
       customerId: widget.customerId,
       status: selectedStatus,
     );

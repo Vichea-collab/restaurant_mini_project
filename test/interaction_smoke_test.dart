@@ -4,11 +4,16 @@ import 'package:w3/main.dart';
 import 'package:w3/model/reservation.dart';
 import 'package:w3/model/table.dart';
 import 'package:w3/model/time_slot.dart';
+import 'package:w3/service/reservation_service.dart';
 import 'package:w3/service/restaurant_service.dart';
 import 'package:w3/ui/widgets/filter_bar.dart';
 
-void addReservation(RestaurantService s, String id, ReservationStatus status) {
-  s.reservations.add(
+void addReservation(
+  ReservationService rs,
+  String id,
+  ReservationStatus status,
+) {
+  rs.reservations.add(
     Reservation(
       id: id,
       restaurantId: 'RST1',
@@ -26,8 +31,12 @@ void addReservation(RestaurantService s, String id, ReservationStatus status) {
   );
 }
 
-RestaurantService buildService() {
-  final s = RestaurantService(now: () => DateTime(2026, 9, 20, 18, 40));
+(RestaurantService, ReservationService) buildService() {
+  final s = RestaurantService();
+  final rs = ReservationService(
+    s,
+    now: () => DateTime(2026, 9, 20, 18, 40),
+  );
   s.addRestaurant(
     restaurantId: 'RST1',
     name: 'Bistro',
@@ -48,10 +57,10 @@ RestaurantService buildService() {
     location: TableLocation.bar,
   );
   s.addCustomer(customerId: 'C103', name: 'Vichea', phone: '012');
-  addReservation(s, 'A', ReservationStatus.pending);
-  addReservation(s, 'B', ReservationStatus.cancelled);
-  addReservation(s, 'C', ReservationStatus.cancelled);
-  return s;
+  addReservation(rs, 'A', ReservationStatus.pending);
+  addReservation(rs, 'B', ReservationStatus.cancelled);
+  addReservation(rs, 'C', ReservationStatus.cancelled);
+  return (s, rs);
 }
 
 Future<void> openBooking(WidgetTester tester) async {
@@ -70,7 +79,7 @@ Future<void> chooseFilter(WidgetTester tester, String option) async {
 
 void main() {
   testWidgets('home filter reacts', (tester) async {
-    final service = buildService();
+    final (service, reservationService) = buildService();
     service.addRestaurant(
       restaurantId: 'RST2',
       name: 'Zen',
@@ -78,7 +87,9 @@ void main() {
       openingHour: 12,
       closingHour: 23,
     );
-    await tester.pumpWidget(RestaurantApp(service: service));
+    await tester.pumpWidget(
+      RestaurantApp(service: service, reservationService: reservationService),
+    );
     expect(find.text('Bistro'), findsOneWidget);
     expect(find.text('Zen'), findsOneWidget);
     await chooseFilter(tester, 'Japanese');
@@ -89,8 +100,13 @@ void main() {
   });
 
   testWidgets('reservation filter reacts', (tester) async {
+    final (service, reservationService) = buildService();
     await tester.pumpWidget(
-      RestaurantApp(service: buildService(), initialTabIndex: 2),
+      RestaurantApp(
+        service: service,
+        reservationService: reservationService,
+        initialTabIndex: 2,
+      ),
     );
     expect(find.text('No reservations'), findsNothing);
     expect(find.text('Pending'), findsNWidgets(2)); // pill + card badge
@@ -105,7 +121,10 @@ void main() {
     tester.view.physicalSize = const Size(800, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(RestaurantApp(service: buildService()));
+    final (service, reservationService) = buildService();
+    await tester.pumpWidget(
+      RestaurantApp(service: service, reservationService: reservationService),
+    );
     await openBooking(tester);
 
     // 2 guests: bar (2 seats) is selected
