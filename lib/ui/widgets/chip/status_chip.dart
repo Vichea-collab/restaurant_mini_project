@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../model/reservation.dart';
-import 'theme.dart';
+import '../../../model/reservation.dart';
+import '../theme.dart';
 
-class StatusBadge extends StatelessWidget {
+class StatusChip extends StatelessWidget {
   final ReservationStatus status;
 
-  const StatusBadge({super.key, required this.status});
+  const StatusChip({super.key, required this.status});
 
   Color get backgroundColor {
     switch (status) {

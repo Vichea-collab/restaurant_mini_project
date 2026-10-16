@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'theme.dart';
 
-class PrimaryButton extends StatelessWidget {
+class AppButton extends StatelessWidget {
   final String text;
+  final VoidCallback? onPressed;
 
-  const PrimaryButton({super.key, required this.text});
+  const AppButton({super.key, required this.text, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -20,13 +21,10 @@ class PrimaryButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        onPressed: () {},
+        onPressed: onPressed,
         child: Text(
           text,
-          style: const TextStyle(
-            fontSize: 15,
-            color: Colors.white,
-          ),
+          style: const TextStyle(fontSize: 15, color: Colors.white),
         ),
       ),
     );

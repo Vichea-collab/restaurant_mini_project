@@ -1,7 +1,6 @@
 class Customer {
-  final String id;
-  final String name;
-  final String phone;
+  String name;
+  String phone;
 
-  Customer({required this.id, required this.name, required this.phone});
+  Customer({required this.name, required this.phone});
 }

@@ -1,16 +1,21 @@
-enum TableLocation { indoor, outdoor, window, bar, privateRoom }
+enum TableLocation {
+  indoor('Indoor'),
+  outdoor('Outdoor'),
+  window('Window'),
+  bar('Bar'),
+  privateRoom('Private Room');
 
-enum TableStatus { available, occupied, outOfService }
+  final String label;
+  const TableLocation(this.label);
+}
 
 class Table {
   final int id;
   final int seats;
   final TableLocation location;
-  TableStatus status = TableStatus.available;
 
   Table({required this.id, required this.seats, required this.location});
 
-  // indoor and private room accept any number of guests
   bool get hasGuestLimit {
     return location == TableLocation.bar ||
         location == TableLocation.window ||
