@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../model/reservation.dart';
-import '../../../model/customer.dart';
-import '../../utils/format_utils.dart';
-import '../../widgets/chip/status_chip.dart';
+import '../../model/reservation.dart';
+import '../../model/customer.dart';
+import '../widgets/chip/status_chip.dart';
+import '../widgets/filter_dropdown.dart';
 
 class ReservationScreen extends StatefulWidget {
   final List<Reservation> reservations;
@@ -51,16 +51,12 @@ class _ReservationScreenState extends State<ReservationScreen> {
         padding: const EdgeInsets.all(20.0),
         child: ListView(
           children: [
-            DropdownMenu<ReservationStatus?>(
-              initialSelection: selectedStatus,
-              label: const Text('Status'),
-              expandedInsets: EdgeInsets.zero,
+            FilterDropdown<ReservationStatus>(
+              label: 'Status',
+              selected: selectedStatus,
+              values: ReservationStatus.values,
+              labelOf: (status) => status.label,
               onSelected: onFilterChanged,
-              dropdownMenuEntries: [
-                const DropdownMenuEntry(value: null, label: 'All'),
-                for (final status in ReservationStatus.values)
-                  DropdownMenuEntry(value: status, label: status.label),
-              ],
             ),
             const SizedBox(height: 10),
             if (reservations.isEmpty)
@@ -93,13 +89,10 @@ class ReservationTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
-        leading: Text(
-          FormatUtils.time(start),
-          style: const TextStyle(fontSize: 16),
-        ),
+        leading: Text('${start.hour}:00', style: const TextStyle(fontSize: 16)),
         title: Text(reservation.restaurant.name),
         subtitle: Text(
-          '${FormatUtils.date(start)} · ${reservation.guest} guests · '
+          '${start.day}/${start.month}/${start.year} · ${reservation.guest} guests · '
           'Table ${reservation.table.id} · ${reservation.table.location.label}',
         ),
         trailing: StatusChip(status: reservation.status),

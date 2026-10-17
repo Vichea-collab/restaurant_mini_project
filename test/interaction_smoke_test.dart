@@ -5,9 +5,9 @@ import 'package:w3/model/reservation.dart';
 import 'package:w3/model/restaurant.dart';
 import 'package:w3/model/table.dart';
 import 'package:w3/model/time_slot.dart';
-import 'package:w3/ui/screens/booking/booking_screen.dart';
-import 'package:w3/ui/screens/reservation/reservation_screen.dart';
-import 'package:w3/ui/screens/restaurant/restaurant_screen.dart';
+import 'package:w3/ui/screens/booking_screen.dart';
+import 'package:w3/ui/screens/reservation_screen.dart';
+import 'package:w3/ui/screens/restaurant_screen.dart';
 
 class TestData {
   final customer = Customer(name: 'Vichea', phone: '012345678');
@@ -215,19 +215,19 @@ void main() {
     expect(find.text('Choose a table location'), findsOneWidget);
   });
 
-  testWidgets('phone shows an error as soon as a letter is typed', (
-    tester,
-  ) async {
+  testWidgets('phone with letters shows an error on reserve', (tester) async {
     await useTallScreen(tester);
     final data = TestData();
     await tester.pumpWidget(data.app());
     await openBooking(tester);
 
     await tester.enterText(phoneField, '012abc');
+    await tester.tap(find.text('Reserve Table'));
     await tester.pump();
     expect(find.text('Phone number can only have numbers'), findsOneWidget);
 
     await tester.enterText(phoneField, '012345678');
+    await tester.tap(find.text('Reserve Table'));
     await tester.pump();
     expect(find.text('Phone number can only have numbers'), findsNothing);
   });

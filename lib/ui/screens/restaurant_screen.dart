@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
 
-import '../../../model/customer.dart';
-import '../../../model/reservation.dart';
-import '../../../model/restaurant.dart';
-import '../../widgets/theme.dart';
-import '../booking/booking_screen.dart';
-import '../reservation/reservation_screen.dart';
+import '../../model/customer.dart';
+import '../../model/reservation.dart';
+import '../../model/restaurant.dart';
+import '../widgets/theme.dart';
+import '../widgets/filter_dropdown.dart';
+import 'booking_screen.dart';
+import 'reservation_screen.dart';
 
 class RestaurantScreen extends StatefulWidget {
   final List<Restaurant> restaurants;
   final List<Reservation> reservations;
   final Customer customer;
-  final DateTime now;
+  final DateTime? now;
 
   const RestaurantScreen({
     super.key,
     required this.restaurants,
     required this.reservations,
     required this.customer,
-    required this.now,
+    this.now,
   });
 
   @override
@@ -102,16 +103,12 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
         padding: const EdgeInsets.all(20.0),
         child: ListView(
           children: [
-            DropdownMenu<String?>(
-              initialSelection: selectedType,
-              label: const Text('Type'),
-              expandedInsets: EdgeInsets.zero,
+            FilterDropdown<String>(
+              label: 'Type',
+              selected: selectedType,
+              values: types,
+              labelOf: (type) => type,
               onSelected: onFilterChanged,
-              dropdownMenuEntries: [
-                const DropdownMenuEntry(value: null, label: 'All'),
-                for (final type in types)
-                  DropdownMenuEntry(value: type, label: type),
-              ],
             ),
             const SizedBox(height: 10),
             for (final restaurant in filteredRestaurants)

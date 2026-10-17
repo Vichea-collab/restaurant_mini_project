@@ -6,7 +6,6 @@ class AppColors {
   static const red = Color(0xFFD93025);
 
   static const text = Color(0xFF1E232A);
-  static const hint = Color(0xFF9CA3AF);
 }
 
 final ThemeData appTheme = ThemeData(

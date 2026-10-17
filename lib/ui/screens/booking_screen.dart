@@ -1,26 +1,25 @@
 import 'package:flutter/material.dart' hide Table;
 
-import '../../../model/customer.dart';
-import '../../../model/reservation.dart';
-import '../../../model/restaurant.dart';
-import '../../../model/table.dart';
-import '../../../model/time_slot.dart';
-import '../../widgets/theme.dart';
-import '../../utils/format_utils.dart';
-import '../../widgets/app_button.dart';
+import '../../model/customer.dart';
+import '../../model/reservation.dart';
+import '../../model/restaurant.dart';
+import '../../model/table.dart';
+import '../../model/time_slot.dart';
+import '../widgets/theme.dart';
+import '../widgets/app_button.dart';
 
 class BookingScreen extends StatefulWidget {
   final Restaurant restaurant;
   final List<Reservation> reservations;
   final Customer customer;
-  final DateTime now;
+  final DateTime? now;
 
   const BookingScreen({
     super.key,
     required this.restaurant,
     required this.reservations,
     required this.customer,
-    required this.now,
+    this.now,
   });
 
   @override
@@ -51,6 +50,8 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Restaurant get restaurant => widget.restaurant;
+
+  DateTime get now => widget.now ?? DateTime.now();
 
   int get visitHours => Reservation.visitHours;
 
@@ -97,8 +98,11 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   String? validatePhone(String? value) {
-    if (value == null || value.length < 8 || int.tryParse(value) == null) {
-      return 'Enter a phone number (at least 8 digits)';
+    if (value != null && value.isNotEmpty && int.tryParse(value) == null) {
+      return 'Phone number can only have numbers';
+    }
+    if (value == null || value.length < 8) {
+      return 'Phone number must have at least 8 digits';
     }
     return null;
   }
@@ -114,14 +118,13 @@ class _BookingScreenState extends State<BookingScreen> {
     if (hour == null) {
       return 'Choose a time';
     }
-    if (selectedDate != null && !startAt(hour).isAfter(widget.now)) {
+    if (selectedDate != null && !startAt(hour).isAfter(now)) {
       return 'Choose a time in the future';
     }
     return null;
   }
 
   void onPickDate() async {
-    DateTime now = widget.now;
     DateTime today = DateTime(now.year, now.month, now.day);
     DateTime? picked = await showDatePicker(
       context: context,
@@ -132,7 +135,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
     if (picked != null) {
       selectedDate = picked;
-      _dateController.text = FormatUtils.date(picked);
+      _dateController.text = '${picked.day}/${picked.month}/${picked.year}';
     }
   }
 
@@ -180,14 +183,14 @@ class _BookingScreenState extends State<BookingScreen> {
     DateTime start = startAt(selectedHour!);
     TimeSlot slot = TimeSlot(
       start: start,
-      end: start.add(const Duration(hours: Reservation.visitHours)),
+      end: start.add(Duration(hours: visitHours)),
     );
     Table? table = findTable(slot);
     if (table == null) {
       setState(() {
         locationError =
             'No free ${selectedLocation!.label} table at '
-            '${FormatUtils.time(start)}. Try another time or location.';
+            '${start.hour}:00. Try another time or location.';
       });
       return;
     }
@@ -260,9 +263,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     for (final hour in startHours)
                       DropdownMenuEntry(
                         value: hour,
-                        label:
-                            '${FormatUtils.hour(hour)} - '
-                            '${FormatUtils.hour(hour + visitHours)}',
+                        label: '$hour:00 - ${hour + visitHours}:00',
                       ),
                   ],
                 ),

@@ -5,7 +5,7 @@ import 'model/reservation.dart';
 import 'model/restaurant.dart';
 import 'model/table.dart';
 import 'model/time_slot.dart';
-import 'ui/screens/restaurant/restaurant_screen.dart';
+import 'ui/screens/restaurant_screen.dart';
 import 'ui/widgets/theme.dart';
 
 void main() {
@@ -69,7 +69,6 @@ void main() {
         restaurants: [bistro, zen],
         reservations: reservations,
         customer: customer,
-        now: DateTime(2026, 9, 20, 18, 40),
       ),
     ),
   );

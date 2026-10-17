@@ -7,8 +7,7 @@ enum ReservationStatus {
   pending('Pending'),
   seated('Seated'),
   completed('Completed'),
-  cancelled('Cancelled'),
-  noShow('No-show');
+  cancelled('Cancelled');
 
   final String label;
   const ReservationStatus(this.label);

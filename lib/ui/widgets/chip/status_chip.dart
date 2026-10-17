@@ -18,8 +18,6 @@ class StatusChip extends StatelessWidget {
         return const Color(0xFFE8F5F1);
       case ReservationStatus.cancelled:
         return const Color(0xFFFCE8E6);
-      case ReservationStatus.noShow:
-        return const Color(0xFFF1F3F4);
     }
   }
 
@@ -33,8 +31,6 @@ class StatusChip extends StatelessWidget {
         return AppColors.teal;
       case ReservationStatus.cancelled:
         return AppColors.red;
-      case ReservationStatus.noShow:
-        return const Color(0xFF5F6368);
     }
   }
 
