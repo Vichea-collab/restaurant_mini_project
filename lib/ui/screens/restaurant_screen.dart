@@ -88,6 +88,8 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
 
   @override
   Widget build(BuildContext context) {
+    List<Restaurant> restaurants = filteredRestaurants;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Restaurants'),
@@ -101,7 +103,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: ListView(
+        child: Column(
           children: [
             FilterDropdown<String>(
               label: 'Type',
@@ -111,11 +113,15 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
               onSelected: onFilterChanged,
             ),
             const SizedBox(height: 10),
-            for (final restaurant in filteredRestaurants)
-              RestaurantTile(
-                restaurant: restaurant,
-                onTap: () => onRestaurantSelected(restaurant),
+            Expanded(
+              child: ListView.builder(
+                itemCount: restaurants.length,
+                itemBuilder: (context, index) => RestaurantTile(
+                  restaurant: restaurants[index],
+                  onTap: () => onRestaurantSelected(restaurants[index]),
+                ),
               ),
+            ),
           ],
         ),
       ),

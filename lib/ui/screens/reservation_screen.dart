@@ -43,13 +43,22 @@ class _ReservationScreenState extends State<ReservationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final reservations = filteredReservations;
+    List<Reservation> reservations = filteredReservations;
+
+    Widget reservationsView = const Center(child: Text('No reservations'));
+    if (reservations.isNotEmpty) {
+      reservationsView = ListView.builder(
+        itemCount: reservations.length,
+        itemBuilder: (context, index) =>
+            ReservationTile(reservation: reservations[index]),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Reservation')),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: ListView(
+        child: Column(
           children: [
             FilterDropdown<ReservationStatus>(
               label: 'Status',
@@ -59,13 +68,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
               onSelected: onFilterChanged,
             ),
             const SizedBox(height: 10),
-            if (reservations.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
-                child: Center(child: Text('No reservations')),
-              ),
-            for (final reservation in reservations)
-              ReservationTile(reservation: reservation),
+            Expanded(child: reservationsView),
           ],
         ),
       ),
